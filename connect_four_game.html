@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .yellow {
+        background: yellow;
+        animation-name: drop;
+        animation-duration: 1s;
+      }
+      .red {
+        background: red;
+        animation-name: drop;
+        animation-duration: 1s;
+      }
+      .token {
+        position: absolute;
+        width: 10vmin;
+        height: 10vmin;
+        border-radius: 10vmin;
+      }
+
+      #gameBoard {
+        margin: auto;
+        position: relative;
+        width: 70vmin;
+        height: 70vmin;
+      }
+
+      #boardOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+        background: linear-gradient(180deg, blue 14.2857%, 0, transparent),
+          radial-gradient(transparent 4vmin, blue 0) 0 0/14.2857% 14.2857%;
+      }
+
+      @keyframes drop {
+        0% {
+          transform: translateY(-100vh);
+        }
+
+        100% {
+          transform: translateY(0px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameBoard">
+      <div id="boardOverlay"></div>
+    </div>
+    <script>
+      function Game() {
+        this.gameState = new Array(7).fill("").map(() => new Array());
+        this.isPlayer1 = true;
+        this.isWinner = undefined;
+        const countConsecutiveToken = (
+          initRow,
+          initCol,
+          dirRow,
+          dirCol,
+          tokenToCheck
+        ) => {
+          let count = 0;
+          let currRow = initRow + dirRow;
+          let currCol = initCol + dirCol;
+          while (
+            currCol >= 0 &&
+            currCol <= 6 &&
+            currRow >= 0 &&
+            currRow <= 5 &&
+            this.gameState[currCol][currRow] === tokenToCheck
+          ) {
+            currRow += dirRow;
+            currCol += dirCol;
+            count++;
+          }
+          return count;
+        };
+        function checkWinState(row, column, currPlayer) {
+          let horizontal =
+            1 +
+            countConsecutiveToken(row, column, 1, 0, currPlayer) +
+            countConsecutiveToken(row, column, -1, 0, currPlayer);
+          let vertical =
+            1 +
+            countConsecutiveToken(row, column, 0, 1, currPlayer) +
+            countConsecutiveToken(row, column, 0, -1, currPlayer);
+          let diagTR =
+            1 +
+            countConsecutiveToken(row, column, 1, 1, currPlayer) +
+            countConsecutiveToken(row, column, -1, -1, currPlayer);
+          let diagBR =
+            1 +
+            countConsecutiveToken(row, column, 1, -1, currPlayer) +
+            countConsecutiveToken(row, column, -1, 1, currPlayer);
+          if (horizontal >= 4 || vertical >= 4 || diagTR >= 4 || diagBR >= 4) {
+            return true;
+          }
+          return false;
+        }
+        function addToken(column) {
+          if (!this.isWinner) {
+            const token = this.isPlayer1 ? "r" : "y";
+            const row = this.gameState[column].length;
+            if (row < 6) {
+              this.gameState[column].push(token);
+              this.isPlayer1 = !this.isPlayer1;
+              if (checkWinState(row, column, token)) {
+                this.isWinner = token;
+              }
+              return this.gameState[column];
+            }
+          }
+        }
+        function hasWon() {
+          return this.isWinner;
+        }
+        return {
+          gameState: this.gameState,
+          addToken,
+          isPlayer1: this.isPlayer1,
+          hasWon,
+        };
+      }
+
+      let game = new Game();
+
+      const board = document.getElementById("gameBoard");
+
+      board.addEventListener("click", (event) => {
+        let boardUnit = board.offsetWidth / 7;
+        const selectedColumn = Math.floor(event.offsetX / boardUnit);
+        const addedColumn = game.addToken(selectedColumn);
+        const selectedRow = addedColumn && addedColumn.length - 1;
+        if (addedColumn) {
+          let newToken = document.createElement("div");
+          newToken.classList.add("token");
+          if (game.isPlayer1) {
+            newToken.classList.add("yellow");
+          } else {
+            newToken.classList.add("red");
+          }
+          newToken.style.left = `${selectedColumn * 10}vmin`;
+          newToken.style.bottom = `${selectedRow * 10}vmin`;
+          board.append(newToken);
+          let winner = game.hasWon();
+          if (winner) {
+            setTimeout(() => alert(winner + " has won!"), 1000);
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
